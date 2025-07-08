@@ -191,7 +191,7 @@ function layout(content: string, title: string = "Personal Dashboard") {
     <title>${title}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- HTMZ -->
-    <iframe hidden name=htmz onload="setTimeout(()=>document.querySelector(contentWindow.location.hash||null)?.replaceWith(...contentDocument.body.childNodes))"></iframe>
+    <iframe hidden name=htmz onload="setTimeout(() => { const hash = contentWindow.location.hash; if (hash) { const target = document.querySelector(hash); if (target) { target.innerHTML = contentDocument.body.innerHTML; } } else { const currentMain = document.querySelector('main'); const newMain = contentWindow.document.querySelector('main'); if (currentMain && newMain) { currentMain.innerHTML = newMain.innerHTML; } } })"></iframe>
     <base target="htmz">
 </head>
 <body class="bg-gray-50">
