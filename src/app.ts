@@ -2,12 +2,6 @@ import { runMigrations } from "./shared/database/migrations";
 import { FinanceHandlers } from "./features/finance/finance.handlers";
 import { TaskHandlers } from "./features/tasks/tasks.handlers";
 import { DashboardHandlers } from "./features/dashboard/dashboard.handlers";
-import { TransactionService } from "./features/finance/finance.service";
-import { TaskService } from "./features/tasks/tasks.service";
-import { renderFinanceDashboard } from "./features/finance/finance.templates";
-import { renderTasksList } from "./features/tasks/tasks.templates";
-import { renderDashboardOverview } from "./features/dashboard/dashboard.templates";
-import { layout } from "./shared/templates/layout";
 import { handleError } from "./shared/errors/handlers";
 
 // Initialize database
@@ -17,10 +11,6 @@ runMigrations();
 const financeHandlers = new FinanceHandlers();
 const taskHandlers = new TaskHandlers();
 const dashboardHandlers = new DashboardHandlers();
-
-// Services for HTML rendering
-const transactionService = new TransactionService();
-const taskService = new TaskService();
 
 // SSE client management
 const sseClients = new Set<ReadableStreamDefaultController>();
@@ -42,100 +32,24 @@ function notifyClients(table: string, action: string, data: any) {
 // HTML Routes Handler
 async function handleHTMLRoutes(pathname: string, req: Request): Promise<Response> {
   const userId = "user-1"; // Mock user - in production, get from auth
-  const isHTMXRequest = req.headers.get('HX-Request') === 'true';
   
   try {
     if (pathname === '/app/finance') {
-      const transactionsResult = await transactionService.getTransactionsByUser(userId);
-      const analysisResult = await transactionService.analyzeSpendingByCategory(userId, 30);
-      
-      if (!transactionsResult.success || !analysisResult.success) {
-        throw new Error("Failed to load finance data");
-      }
-      
-      const content = renderFinanceDashboard(transactionsResult.data, analysisResult.data);
-      
-      if (isHTMXRequest) {
-        // Return just the content for HTMX requests
-        return new Response(`
-          <div class="mb-6">
-            <h1 class="text-2xl font-bold text-gray-900">Finance</h1>
-          </div>
-          ${content}
-        `, {
-          headers: { 'Content-Type': 'text/html' }
-        });
-      }
-      
-      return new Response(layout(content, "Finance"), {
-        headers: { 'Content-Type': 'text/html' }
-      });
+      return await financeHandlers.getFinancePage(req, userId);
     }
     
     if (pathname === '/app/tasks') {
-      const pendingResult = await taskService.getPendingTasks(userId);
-      const completedResult = await taskService.getCompletedTasks(userId);
-      
-      if (!pendingResult.success || !completedResult.success) {
-        throw new Error("Failed to load tasks data");
-      }
-      
-      const content = renderTasksList(pendingResult.data, completedResult.data);
-      
-      if (isHTMXRequest) {
-        // Return just the content for HTMX requests
-        return new Response(`
-          <div class="mb-6">
-            <h1 class="text-2xl font-bold text-gray-900">Tasks</h1>
-          </div>
-          ${content}
-        `, {
-          headers: { 'Content-Type': 'text/html' }
-        });
-      }
-      
-      return new Response(layout(content, "Tasks"), {
-        headers: { 'Content-Type': 'text/html' }
-      });
+      return await taskHandlers.getTasksPage(req, userId);
     }
     
     if (pathname === '/app/dashboard' || pathname === '/app') {
-      const overviewResponse = await dashboardHandlers.getDashboardOverview(userId);
-      const overviewData = await overviewResponse.json();
-      
-      if (!overviewData.overview) {
-        throw new Error("Failed to load dashboard data");
-      }
-      
-      const content = renderDashboardOverview(overviewData.overview);
-      
-      if (isHTMXRequest) {
-        // Return just the content for HTMX requests
-        return new Response(`
-          <div class="mb-6">
-            <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
-          </div>
-          ${content}
-        `, {
-          headers: { 'Content-Type': 'text/html' }
-        });
-      }
-      
-      return new Response(layout(content, "Dashboard"), {
-        headers: { 'Content-Type': 'text/html' }
-      });
+      return await dashboardHandlers.getDashboardPage(req, userId);
     }
     
     return new Response('Not Found', { status: 404 });
   } catch (error) {
     const errorResponse = handleError(error as Error);
-    const errorContent = `
-      <div class="bg-red-50 p-6 rounded-lg">
-        <h2 class="text-red-800 font-semibold">Error</h2>
-        <p class="text-red-600">${errorResponse.body.message}</p>
-      </div>
-    `;
-    return new Response(layout(errorContent, "Error"), {
+    return new Response(errorResponse.body.message, {
       headers: { 'Content-Type': 'text/html' },
       status: errorResponse.status
     });
@@ -150,80 +64,41 @@ async function handleAPIRoutes(pathname: string, req: Request): Promise<Response
     // Finance API
     if (pathname === '/api/finance/transactions') {
       if (req.method === 'GET') {
-        // Check if this is an HTMX request for HTML
-        const acceptHeader = req.headers.get('Accept') || '';
-        const isHTMXRequest = req.headers.get('HX-Request') === 'true';
-        
-        if (isHTMXRequest || acceptHeader.includes('text/html')) {
-          // Return HTML for HTMX requests
-          const transactionsResult = await transactionService.getTransactionsByUser(userId);
-          if (transactionsResult.success) {
-            const { renderTransactionsList } = await import('./features/finance/finance.templates');
-            const html = renderTransactionsList(transactionsResult.data);
-            return new Response(html, {
-              headers: { 'Content-Type': 'text/html' }
-            });
-          }
-        }
-        
-        return await financeHandlers.getTransactions(userId);
+        return await financeHandlers.getTransactions(req, userId);
       }
       if (req.method === 'POST') {
         const response = await financeHandlers.createTransaction(req, userId);
         if (response.ok) {
           notifyClients('transactions', 'created', {});
-          
-          // Return updated HTML instead of JSON for HTMX
-          const transactionsResult = await transactionService.getTransactionsByUser(userId);
-          
-          if (transactionsResult.success) {
-            const { renderTransactionsList } = await import('./features/finance/finance.templates');
-            const updatedHTML = renderTransactionsList(transactionsResult.data);
-            return new Response(updatedHTML, {
-              headers: { 'Content-Type': 'text/html' }
-            });
-          }
         }
         return response;
       }
     }
     
     if (pathname === '/api/finance/spending') {
-      return await financeHandlers.getSpendingAnalysis(userId);
+      return await financeHandlers.getSpendingAnalysis(req, userId);
     }
     
     // Tasks API
     if (pathname === '/api/tasks') {
       if (req.method === 'GET') {
-        return await taskHandlers.getTasks(userId);
+        return await taskHandlers.getTasks(req, userId);
       }
       if (req.method === 'POST') {
         const response = await taskHandlers.createTask(req, userId);
         if (response.ok) {
           notifyClients('tasks', 'created', {});
-          
-          // Return updated HTML instead of JSON for HTMX
-          const pendingResult = await taskService.getPendingTasks(userId);
-          const completedResult = await taskService.getCompletedTasks(userId);
-          
-          if (pendingResult.success && completedResult.success) {
-            const { renderTasksContent } = await import('./features/tasks/tasks.templates');
-            const updatedHTML = renderTasksContent(pendingResult.data, completedResult.data);
-            return new Response(updatedHTML, {
-              headers: { 'Content-Type': 'text/html' }
-            });
-          }
         }
         return response;
       }
     }
     
     if (pathname === '/api/tasks/pending') {
-      return await taskHandlers.getPendingTasks(userId);
+      return await taskHandlers.getPendingTasks(req, userId);
     }
     
     if (pathname === '/api/tasks/completed') {
-      return await taskHandlers.getCompletedTasks(userId);
+      return await taskHandlers.getCompletedTasks(req, userId);
     }
     
     if (pathname.startsWith('/api/tasks/') && pathname.endsWith('/toggle') && req.method === 'POST') {
@@ -231,18 +106,6 @@ async function handleAPIRoutes(pathname: string, req: Request): Promise<Response
       const response = await taskHandlers.toggleTaskCompletion(req, taskId);
       if (response.ok) {
         notifyClients('tasks', 'updated', { taskId });
-        
-        // Return updated HTML instead of JSON for HTMX
-        const pendingResult = await taskService.getPendingTasks(userId);
-        const completedResult = await taskService.getCompletedTasks(userId);
-        
-        if (pendingResult.success && completedResult.success) {
-          const { renderTasksContent } = await import('./features/tasks/tasks.templates');
-          const updatedHTML = renderTasksContent(pendingResult.data, completedResult.data);
-          return new Response(updatedHTML, {
-            headers: { 'Content-Type': 'text/html' }
-          });
-        }
       }
       return response;
     }
@@ -257,28 +120,16 @@ async function handleAPIRoutes(pathname: string, req: Request): Promise<Response
     }
     
     if (pathname === '/api/tasks/summary') {
-      return await taskHandlers.getTaskSummary(userId);
+      return await taskHandlers.getTaskSummary(req, userId);
     }
     
     if (pathname === '/api/tasks/refresh') {
-      // Return HTML for tasks container refresh
-      const pendingResult = await taskService.getPendingTasks(userId);
-      const completedResult = await taskService.getCompletedTasks(userId);
-      
-      if (pendingResult.success && completedResult.success) {
-        const { renderTasksContent } = await import('./features/tasks/tasks.templates');
-        const html = renderTasksContent(pendingResult.data, completedResult.data);
-        return new Response(html, {
-          headers: { 'Content-Type': 'text/html' }
-        });
-      }
-      
-      return new Response('Error refreshing tasks', { status: 500 });
+      return await taskHandlers.getTasksRefresh(req, userId);
     }
     
     // Dashboard API
     if (pathname === '/api/dashboard/overview') {
-      return await dashboardHandlers.getDashboardOverview(userId);
+      return await dashboardHandlers.getDashboardOverview(req, userId);
     }
     
     // MCP Discovery (for AI agent compatibility)
