@@ -32,7 +32,6 @@ export const renderFinanceDashboard = (transactions: Transaction[], analysis: Tr
         <form hx-post="/api/finance/transactions" 
               hx-trigger="submit" 
               hx-target="#transactions-list" 
-              hx-ext="json-enc" 
               hx-on::after-request="this.reset()"
               hx-indicator="#transaction-form-loading">
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

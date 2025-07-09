@@ -303,6 +303,8 @@ async function handleAPIRoutes(pathname: string, req: Request): Promise<Response
 
 // SSE Handler
 function handleSSE(): Response {
+  let heartbeatInterval: Timer | null = null;
+  
   const stream = new ReadableStream({
     start(controller) {
       sseClients.add(controller);
@@ -317,12 +319,12 @@ function handleSSE(): Response {
       }
       
       // Set up periodic heartbeat to keep connection alive
-      const heartbeat = setInterval(() => {
+      heartbeatInterval = setInterval(() => {
         try {
           controller.enqueue(new TextEncoder().encode('data: {"type":"heartbeat"}\n\n'));
         } catch (error) {
           console.error('SSE heartbeat error:', error);
-          clearInterval(heartbeat);
+          if (heartbeatInterval) clearInterval(heartbeatInterval);
           sseClients.delete(controller);
         }
       }, 30000); // Every 30 seconds
@@ -331,6 +333,7 @@ function handleSSE(): Response {
     cancel() {
       // Client disconnected, clean up
       console.log('SSE client disconnected');
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
     }
   });
   
@@ -349,6 +352,7 @@ function handleSSE(): Response {
 // Main Server
 const server = Bun.serve({
   port: 3000,
+  idleTimeout: 255, // Max idle timeout in seconds
   
   async fetch(req) {
     const url = new URL(req.url);

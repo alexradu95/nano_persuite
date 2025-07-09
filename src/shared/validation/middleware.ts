@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ValidationError } from "../errors/handlers";
-import { Result, createSuccess, createError } from "../types/result";
+import { type Result, createSuccess, createError } from "../types/result";
 
 // Validation middleware function
 export const validateSchema = <T>(

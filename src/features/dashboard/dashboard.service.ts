@@ -1,12 +1,20 @@
-import { DashboardOverview } from "../../schemas";
-import { Result, createSuccess, createError } from "../../shared/types/result";
+import type { DashboardOverview } from "../../schemas";
+import { type Result, createSuccess, createError } from "../../shared/types/result";
 import { DatabaseError } from "../../shared/errors/handlers";
 import { TransactionService } from "../finance/finance.service";
 import { TaskService } from "../tasks/tasks.service";
 
 export class DashboardService {
-  private transactionService = new TransactionService();
-  private taskService = new TaskService();
+  private transactionService: TransactionService;
+  private taskService: TaskService;
+
+  constructor(
+    transactionService?: TransactionService,
+    taskService?: TaskService
+  ) {
+    this.transactionService = transactionService || new TransactionService();
+    this.taskService = taskService || new TaskService();
+  }
 
   async getDashboardOverview(userId: string): Promise<Result<DashboardOverview, DatabaseError>> {
     try {

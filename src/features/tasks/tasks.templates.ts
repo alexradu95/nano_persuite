@@ -9,7 +9,6 @@ export const renderTasksList = (pending: Task[], completed: Task[]): string => {
         <form hx-post="/api/tasks" 
               hx-trigger="submit" 
               hx-target="#tasks-container" 
-              hx-ext="json-enc" 
               hx-on::after-request="this.reset()"
               hx-indicator="#task-form-loading">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
