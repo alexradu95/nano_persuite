@@ -1,7 +1,7 @@
 import type { Task } from "../../schemas";
 
 export const renderTasksList = (pending: Task[], completed: Task[]): string => {
-  return `
+  return /*html*/`
     <div class="space-y-6">
       <!-- Add Task Form -->
       <div class="bg-white p-6 rounded-lg shadow">
@@ -82,7 +82,7 @@ export const renderCompletedTasksList = (tasks: Task[]): string => {
     return '<p class="text-gray-500">No completed tasks</p>';
   }
   
-  return `
+  return /*html*/`
     <div class="space-y-3">
       ${tasks.map(task => renderTaskItem(task)).join('')}
     </div>
@@ -90,7 +90,7 @@ export const renderCompletedTasksList = (tasks: Task[]): string => {
 };
 
 export const renderTaskSummary = (summary: { total: number; completed: number; pending: number; overdue: number }): string => {
-  return `
+  return /*html*/`
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <div class="bg-blue-50 p-4 rounded-lg">
         <p class="text-2xl font-bold text-blue-600">${summary.total}</p>

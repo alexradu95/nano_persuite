@@ -2,7 +2,7 @@ import type { DashboardOverview } from "../../schemas";
 import { renderTransactionsList } from "../finance/finance.templates";
 
 export const renderDashboardOverview = (overview: DashboardOverview): string => {
-  return `
+  return /*html*/`
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Recent Transactions -->
       <div class="bg-white p-6 rounded-lg shadow">
