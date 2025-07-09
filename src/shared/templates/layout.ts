@@ -42,11 +42,11 @@ export const layout = (content: string, title: string = "Personal Dashboard"): s
     // Simple notification system
     function showNotification(message, type = 'info') {
       const notification = document.createElement('div');
-      notification.className = `fixed top-4 right-4 px-4 py-2 rounded-lg text-white z-50 ${
+      notification.className = \`fixed top-4 right-4 px-4 py-2 rounded-lg text-white z-50 \${
         type === 'error' ? 'bg-red-500' : 
         type === 'success' ? 'bg-green-500' : 
         'bg-blue-500'
-      }`;
+      }\`;
       notification.textContent = message;
       document.body.appendChild(notification);
       
