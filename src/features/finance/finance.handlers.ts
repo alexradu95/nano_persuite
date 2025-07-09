@@ -19,7 +19,21 @@ export class FinanceHandlers {
 
   async createTransaction(req: Request, userId: string): Promise<Response> {
     try {
-      const body = await req.json();
+      let body: any;
+      
+      // Try to parse JSON first, fallback to form data
+      const contentType = req.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        body = await req.json();
+      } else {
+        const formData = await req.formData();
+        body = Object.fromEntries(formData.entries());
+        // Convert amount to number
+        if (body.amount) {
+          body.amount = parseFloat(body.amount);
+        }
+      }
+
       const validatedData = validateRequestBody(CreateTransactionSchema, {
         ...body,
         userId

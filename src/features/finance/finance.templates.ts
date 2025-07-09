@@ -29,7 +29,12 @@ export const renderFinanceDashboard = (transactions: Transaction[], analysis: Tr
       <!-- Add Transaction Form -->
       <div class="bg-white p-6 rounded-lg shadow">
         <h2 class="text-lg font-semibold mb-4">Add Transaction</h2>
-        <form hx-post="/api/finance/transactions" hx-trigger="submit" hx-target="#transactions-list">
+        <form hx-post="/api/finance/transactions" 
+              hx-trigger="submit" 
+              hx-target="#transactions-list" 
+              hx-ext="json-enc" 
+              hx-on::after-request="this.reset()"
+              hx-indicator="#transaction-form-loading">
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
@@ -55,10 +60,16 @@ export const renderFinanceDashboard = (transactions: Transaction[], analysis: Tr
             </div>
             
             <div class="flex items-end">
-              <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+              <input type="hidden" name="date" value="${new Date().toISOString().split('T')[0]}">
+              <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50">
                 Add Transaction
               </button>
             </div>
+          </div>
+          
+          <div id="transaction-form-loading" class="htmx-indicator flex items-center justify-center text-blue-600 mt-4">
+            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+            Adding transaction...
           </div>
         </form>
       </div>

@@ -27,11 +27,13 @@ const sseClients = new Set<ReadableStreamDefaultController>();
 
 function notifyClients(table: string, action: string, data: any) {
   const message = JSON.stringify({ table, action, data });
+  const encodedMessage = new TextEncoder().encode(`data: ${message}\n\n`);
   
   for (const client of sseClients) {
     try {
-      client.enqueue(`data: ${message}\n\n`);
+      client.enqueue(encodedMessage);
     } catch (e) {
+      console.error('Failed to notify SSE client:', e);
       sseClients.delete(client);
     }
   }
@@ -40,6 +42,7 @@ function notifyClients(table: string, action: string, data: any) {
 // HTML Routes Handler
 async function handleHTMLRoutes(pathname: string, req: Request): Promise<Response> {
   const userId = "user-1"; // Mock user - in production, get from auth
+  const isHTMXRequest = req.headers.get('HX-Request') === 'true';
   
   try {
     if (pathname === '/app/finance') {
@@ -51,6 +54,19 @@ async function handleHTMLRoutes(pathname: string, req: Request): Promise<Respons
       }
       
       const content = renderFinanceDashboard(transactionsResult.data, analysisResult.data);
+      
+      if (isHTMXRequest) {
+        // Return just the content for HTMX requests
+        return new Response(`
+          <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">Finance</h1>
+          </div>
+          ${content}
+        `, {
+          headers: { 'Content-Type': 'text/html' }
+        });
+      }
+      
       return new Response(layout(content, "Finance"), {
         headers: { 'Content-Type': 'text/html' }
       });
@@ -65,6 +81,19 @@ async function handleHTMLRoutes(pathname: string, req: Request): Promise<Respons
       }
       
       const content = renderTasksList(pendingResult.data, completedResult.data);
+      
+      if (isHTMXRequest) {
+        // Return just the content for HTMX requests
+        return new Response(`
+          <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">Tasks</h1>
+          </div>
+          ${content}
+        `, {
+          headers: { 'Content-Type': 'text/html' }
+        });
+      }
+      
       return new Response(layout(content, "Tasks"), {
         headers: { 'Content-Type': 'text/html' }
       });
@@ -79,6 +108,19 @@ async function handleHTMLRoutes(pathname: string, req: Request): Promise<Respons
       }
       
       const content = renderDashboardOverview(overviewData.overview);
+      
+      if (isHTMXRequest) {
+        // Return just the content for HTMX requests
+        return new Response(`
+          <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+          </div>
+          ${content}
+        `, {
+          headers: { 'Content-Type': 'text/html' }
+        });
+      }
+      
       return new Response(layout(content, "Dashboard"), {
         headers: { 'Content-Type': 'text/html' }
       });
@@ -108,12 +150,39 @@ async function handleAPIRoutes(pathname: string, req: Request): Promise<Response
     // Finance API
     if (pathname === '/api/finance/transactions') {
       if (req.method === 'GET') {
+        // Check if this is an HTMX request for HTML
+        const acceptHeader = req.headers.get('Accept') || '';
+        const isHTMXRequest = req.headers.get('HX-Request') === 'true';
+        
+        if (isHTMXRequest || acceptHeader.includes('text/html')) {
+          // Return HTML for HTMX requests
+          const transactionsResult = await transactionService.getTransactionsByUser(userId);
+          if (transactionsResult.success) {
+            const { renderTransactionsList } = await import('./features/finance/finance.templates');
+            const html = renderTransactionsList(transactionsResult.data);
+            return new Response(html, {
+              headers: { 'Content-Type': 'text/html' }
+            });
+          }
+        }
+        
         return await financeHandlers.getTransactions(userId);
       }
       if (req.method === 'POST') {
         const response = await financeHandlers.createTransaction(req, userId);
         if (response.ok) {
           notifyClients('transactions', 'created', {});
+          
+          // Return updated HTML instead of JSON for HTMX
+          const transactionsResult = await transactionService.getTransactionsByUser(userId);
+          
+          if (transactionsResult.success) {
+            const { renderTransactionsList } = await import('./features/finance/finance.templates');
+            const updatedHTML = renderTransactionsList(transactionsResult.data);
+            return new Response(updatedHTML, {
+              headers: { 'Content-Type': 'text/html' }
+            });
+          }
         }
         return response;
       }
@@ -132,6 +201,18 @@ async function handleAPIRoutes(pathname: string, req: Request): Promise<Response
         const response = await taskHandlers.createTask(req, userId);
         if (response.ok) {
           notifyClients('tasks', 'created', {});
+          
+          // Return updated HTML instead of JSON for HTMX
+          const pendingResult = await taskService.getPendingTasks(userId);
+          const completedResult = await taskService.getCompletedTasks(userId);
+          
+          if (pendingResult.success && completedResult.success) {
+            const { renderTasksContent } = await import('./features/tasks/tasks.templates');
+            const updatedHTML = renderTasksContent(pendingResult.data, completedResult.data);
+            return new Response(updatedHTML, {
+              headers: { 'Content-Type': 'text/html' }
+            });
+          }
         }
         return response;
       }
@@ -150,6 +231,18 @@ async function handleAPIRoutes(pathname: string, req: Request): Promise<Response
       const response = await taskHandlers.toggleTaskCompletion(req, taskId);
       if (response.ok) {
         notifyClients('tasks', 'updated', { taskId });
+        
+        // Return updated HTML instead of JSON for HTMX
+        const pendingResult = await taskService.getPendingTasks(userId);
+        const completedResult = await taskService.getCompletedTasks(userId);
+        
+        if (pendingResult.success && completedResult.success) {
+          const { renderTasksContent } = await import('./features/tasks/tasks.templates');
+          const updatedHTML = renderTasksContent(pendingResult.data, completedResult.data);
+          return new Response(updatedHTML, {
+            headers: { 'Content-Type': 'text/html' }
+          });
+        }
       }
       return response;
     }
@@ -165,6 +258,22 @@ async function handleAPIRoutes(pathname: string, req: Request): Promise<Response
     
     if (pathname === '/api/tasks/summary') {
       return await taskHandlers.getTaskSummary(userId);
+    }
+    
+    if (pathname === '/api/tasks/refresh') {
+      // Return HTML for tasks container refresh
+      const pendingResult = await taskService.getPendingTasks(userId);
+      const completedResult = await taskService.getCompletedTasks(userId);
+      
+      if (pendingResult.success && completedResult.success) {
+        const { renderTasksContent } = await import('./features/tasks/tasks.templates');
+        const html = renderTasksContent(pendingResult.data, completedResult.data);
+        return new Response(html, {
+          headers: { 'Content-Type': 'text/html' }
+        });
+      }
+      
+      return new Response('Error refreshing tasks', { status: 500 });
     }
     
     // Dashboard API
@@ -197,9 +306,31 @@ function handleSSE(): Response {
   const stream = new ReadableStream({
     start(controller) {
       sseClients.add(controller);
-      controller.enqueue('data: {"type":"connected"}\n\n');
       
-      // Cleanup on close would go here in production
+      // Send initial connection message
+      try {
+        controller.enqueue(new TextEncoder().encode('data: {"type":"connected"}\n\n'));
+      } catch (error) {
+        console.error('SSE connection error:', error);
+        sseClients.delete(controller);
+        return;
+      }
+      
+      // Set up periodic heartbeat to keep connection alive
+      const heartbeat = setInterval(() => {
+        try {
+          controller.enqueue(new TextEncoder().encode('data: {"type":"heartbeat"}\n\n'));
+        } catch (error) {
+          console.error('SSE heartbeat error:', error);
+          clearInterval(heartbeat);
+          sseClients.delete(controller);
+        }
+      }, 30000); // Every 30 seconds
+    },
+    
+    cancel() {
+      // Client disconnected, clean up
+      console.log('SSE client disconnected');
     }
   });
   
@@ -208,6 +339,8 @@ function handleSSE(): Response {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Cache-Control',
       'X-Accel-Buffering': 'no'
     }
   });
@@ -225,7 +358,7 @@ const server = Bun.serve({
       return Response.redirect('/app/dashboard', 302);
     }
     
-    // HTML routes (for HTMZ)
+    // HTML routes (for HTMX)
     if (url.pathname.startsWith('/app/')) {
       return handleHTMLRoutes(url.pathname, req);
     }

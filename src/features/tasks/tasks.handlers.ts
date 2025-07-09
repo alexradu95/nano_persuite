@@ -41,7 +41,21 @@ export class TaskHandlers {
 
   async createTask(req: Request, userId: string): Promise<Response> {
     try {
-      const body = await req.json();
+      let body: any;
+      
+      // Try to parse JSON first, fallback to form data
+      const contentType = req.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        body = await req.json();
+      } else {
+        const formData = await req.formData();
+        body = Object.fromEntries(formData.entries());
+        // Clean up empty date field
+        if (body.dueDate === '') {
+          delete body.dueDate;
+        }
+      }
+
       const validatedData = validateRequestBody(CreateTaskSchema, {
         ...body,
         userId
@@ -82,7 +96,21 @@ export class TaskHandlers {
 
   async toggleTaskCompletion(req: Request, taskId: string): Promise<Response> {
     try {
-      const body = await req.json();
+      let body: any;
+      
+      // Try to parse JSON first, fallback to form data
+      const contentType = req.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        body = await req.json();
+      } else {
+        const formData = await req.formData();
+        body = Object.fromEntries(formData.entries());
+        // Convert string boolean to actual boolean
+        if (body.completed !== undefined) {
+          body.completed = body.completed === 'true';
+        }
+      }
+
       const validatedData = validateRequestBody(ToggleTaskCompletionSchema, body);
 
       const result = await this.service.toggleTaskCompletion(taskId, validatedData);

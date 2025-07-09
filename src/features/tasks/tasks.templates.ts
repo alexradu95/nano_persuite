@@ -6,7 +6,12 @@ export const renderTasksList = (pending: Task[], completed: Task[]): string => {
       <!-- Add Task Form -->
       <div class="bg-white p-6 rounded-lg shadow">
         <h2 class="text-lg font-semibold mb-4">Add Task</h2>
-        <form hx-post="/api/tasks" hx-trigger="submit" hx-target="#tasks-container">
+        <form hx-post="/api/tasks" 
+              hx-trigger="submit" 
+              hx-target="#tasks-container" 
+              hx-ext="json-enc" 
+              hx-on::after-request="this.reset()"
+              hx-indicator="#task-form-loading">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="md:col-span-2">
               <label class="block text-sm font-medium text-gray-700 mb-1">Task Title</label>
@@ -15,13 +20,19 @@ export const renderTasksList = (pending: Task[], completed: Task[]): string => {
             
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
-              <input type="date" name="due_date" class="w-full p-2 border rounded">
+              <input type="date" name="dueDate" class="w-full p-2 border rounded">
             </div>
           </div>
           
-          <button type="submit" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-            Add Task
-          </button>
+          <div class="flex items-center space-x-4 mt-4">
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50">
+              Add Task
+            </button>
+            <div id="task-form-loading" class="htmx-indicator flex items-center text-blue-600">
+              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+              Adding task...
+            </div>
+          </div>
         </form>
       </div>
 
@@ -67,10 +78,17 @@ export const renderTaskItem = (task: Task): string => {
               hx-post="/api/tasks/${task.id}/toggle" 
               hx-trigger="click"
               hx-target="#tasks-container"
-              class="w-4 h-4 rounded border-2 ${task.completed ? 'bg-green-500 border-green-500' : 'border-gray-300'} flex items-center justify-center"
+              hx-headers='{"Content-Type": "application/json"}'
+              hx-vals='{"completed": ${!task.completed}}'
+              hx-indicator="#task-${task.id}-loading"
+              class="w-5 h-5 rounded border-2 ${task.completed ? 'bg-green-500 border-green-500' : 'border-gray-300'} flex items-center justify-center hover:border-green-400 transition-colors"
+              title="${task.completed ? 'Mark as pending' : 'Mark as completed'}"
             >
               ${task.completed ? '✓' : ''}
             </button>
+            <div id="task-${task.id}-loading" class="htmx-indicator ml-2">
+              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            </div>
             <p class="font-medium ${task.completed ? 'line-through text-gray-500' : ''}">${task.title}</p>
           </div>
           
