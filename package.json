@@ -4,14 +4,24 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/jest": "^30.0.0",
+    "jest": "^30.0.4",
+    "ts-jest": "^29.4.0"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
-    "scripts": {
-    "dev": "bun --hot run server.ts",
-    "start": "bun run server.ts",
-    "db:reset": "rm -f personal.db && bun run server.ts"
+  "scripts": {
+    "dev": "bun --hot run src/app.ts",
+    "start": "bun run src/app.ts",
+    "server:legacy": "bun run server.ts",
+    "db:reset": "rm -f personal.db && bun run src/app.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
   }
 }
