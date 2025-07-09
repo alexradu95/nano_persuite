@@ -23,6 +23,25 @@ export const renderTransactionsList = (transactions: Transaction[]): string => {
   `;
 };
 
+export const renderSpendingAnalysis = (analysis: TransactionAnalysis[]): string => {
+  return `
+    <div class="space-y-3">
+      ${analysis.map(cat => `
+        <div class="flex justify-between items-center p-3 bg-gray-50 rounded">
+          <div>
+            <p class="font-medium capitalize">${cat.category}</p>
+            <p class="text-sm text-gray-600">${cat.transactionCount} transactions</p>
+          </div>
+          <div class="text-right">
+            <p class="font-semibold">£${cat.totalAmount.toFixed(2)}</p>
+            <p class="text-sm text-gray-600">avg £${cat.averageAmount.toFixed(2)}</p>
+          </div>
+        </div>
+      `).join('') || '<p class="text-gray-500">No spending data</p>'}
+    </div>
+  `;
+};
+
 export const renderFinanceDashboard = (transactions: Transaction[], analysis: TransactionAnalysis[]): string => {
   return `
     <div class="space-y-6">

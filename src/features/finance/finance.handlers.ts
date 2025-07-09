@@ -2,8 +2,9 @@ import { TransactionService } from "./finance.service";
 import { CreateTransactionSchema } from "../../schemas";
 import { validateRequestBody } from "../../shared/validation/middleware";
 import { handleError } from "../../shared/errors/handlers";
-import { renderTransactionsList, renderFinanceDashboard } from "./finance.templates";
+import { renderTransactionsList, renderFinanceDashboard, renderSpendingAnalysis } from "./finance.templates";
 import { layout } from "../../shared/templates/layout";
+import { renderErrorMessage } from "../../shared/templates/error";
 
 type ResponseFormat = 'json' | 'html' | 'htmx';
 
@@ -38,12 +39,7 @@ export class FinanceHandlers {
       if (context.format === 'json') {
         return Response.json(errorResponse.body, { status: errorResponse.status });
       } else {
-        const errorContent = `
-          <div class="bg-red-50 p-6 rounded-lg">
-            <h2 class="text-red-800 font-semibold">Error</h2>
-            <p class="text-red-600">${errorResponse.body.message}</p>
-          </div>
-        `;
+        const errorContent = renderErrorMessage(errorResponse.body.message);
         return new Response(errorContent, {
           headers: { 'Content-Type': 'text/html' },
           status: errorResponse.status
@@ -172,12 +168,7 @@ export class FinanceHandlers {
       if (context.format === 'json') {
         return Response.json(errorResponse.body, { status: errorResponse.status });
       } else {
-        const errorContent = `
-          <div class="bg-red-50 p-6 rounded-lg">
-            <h2 class="text-red-800 font-semibold">Error</h2>
-            <p class="text-red-600">${errorResponse.body.message}</p>
-          </div>
-        `;
+        const errorContent = renderErrorMessage(errorResponse.body.message);
         return new Response(errorContent, {
           headers: { 'Content-Type': 'text/html' },
           status: errorResponse.status
@@ -195,12 +186,7 @@ export class FinanceHandlers {
       if (context.format === 'json') {
         return Response.json(errorResponse.body, { status: errorResponse.status });
       } else {
-        const errorContent = `
-          <div class="bg-red-50 p-6 rounded-lg">
-            <h2 class="text-red-800 font-semibold">Error</h2>
-            <p class="text-red-600">${errorResponse.body.message}</p>
-          </div>
-        `;
+        const errorContent = renderErrorMessage(errorResponse.body.message);
         return new Response(errorContent, {
           headers: { 'Content-Type': 'text/html' },
           status: errorResponse.status
@@ -211,23 +197,8 @@ export class FinanceHandlers {
     if (context.format === 'json') {
       return Response.json({ analysis: result.data });
     } else {
-      // For HTML responses, return analysis component
-      const html = `
-        <div class="space-y-3">
-          ${result.data.map(cat => `
-            <div class="flex justify-between items-center p-3 bg-gray-50 rounded">
-              <div>
-                <p class="font-medium capitalize">${cat.category}</p>
-                <p class="text-sm text-gray-600">${cat.transactionCount} transactions</p>
-              </div>
-              <div class="text-right">
-                <p class="font-semibold">£${cat.totalAmount.toFixed(2)}</p>
-                <p class="text-sm text-gray-600">avg £${cat.averageAmount.toFixed(2)}</p>
-              </div>
-            </div>
-          `).join('') || '<p class="text-gray-500">No spending data</p>'}
-        </div>
-      `;
+      // For HTML responses, return analysis component using template function
+      const html = renderSpendingAnalysis(result.data);
       return new Response(html, {
         headers: { 'Content-Type': 'text/html' }
       });

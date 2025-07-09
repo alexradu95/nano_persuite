@@ -65,6 +65,53 @@ export const renderTasksContent = (pending: Task[], completed: Task[]): string =
   `;
 };
 
+export const renderPendingTasksList = (tasks: Task[]): string => {
+  if (tasks.length === 0) {
+    return '<p class="text-gray-500">No pending tasks</p>';
+  }
+  
+  return `
+    <div class="space-y-3">
+      ${tasks.map(task => renderTaskItem(task)).join('')}
+    </div>
+  `;
+};
+
+export const renderCompletedTasksList = (tasks: Task[]): string => {
+  if (tasks.length === 0) {
+    return '<p class="text-gray-500">No completed tasks</p>';
+  }
+  
+  return `
+    <div class="space-y-3">
+      ${tasks.map(task => renderTaskItem(task)).join('')}
+    </div>
+  `;
+};
+
+export const renderTaskSummary = (summary: { total: number; completed: number; pending: number; overdue: number }): string => {
+  return `
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-blue-50 p-4 rounded-lg">
+        <p class="text-2xl font-bold text-blue-600">${summary.total}</p>
+        <p class="text-sm text-gray-600">Total Tasks</p>
+      </div>
+      <div class="bg-green-50 p-4 rounded-lg">
+        <p class="text-2xl font-bold text-green-600">${summary.completed}</p>
+        <p class="text-sm text-gray-600">Completed</p>
+      </div>
+      <div class="bg-yellow-50 p-4 rounded-lg">
+        <p class="text-2xl font-bold text-yellow-600">${summary.pending}</p>
+        <p class="text-sm text-gray-600">Pending</p>
+      </div>
+      <div class="bg-red-50 p-4 rounded-lg">
+        <p class="text-2xl font-bold text-red-600">${summary.overdue}</p>
+        <p class="text-sm text-gray-600">Overdue</p>
+      </div>
+    </div>
+  `;
+};
+
 export const renderTaskItem = (task: Task): string => {
   const isOverdue = task.dueDate && !task.completed && new Date(task.dueDate) < new Date();
   

@@ -2,6 +2,7 @@ import { DashboardService } from "./dashboard.service";
 import { handleError } from "../../shared/errors/handlers";
 import { renderDashboardOverview } from "./dashboard.templates";
 import { layout } from "../../shared/templates/layout";
+import { renderErrorMessage } from "../../shared/templates/error";
 
 type ResponseFormat = 'json' | 'html' | 'htmx';
 
@@ -36,12 +37,7 @@ export class DashboardHandlers {
       if (context.format === 'json') {
         return Response.json(errorResponse.body, { status: errorResponse.status });
       } else {
-        const errorContent = `
-          <div class="bg-red-50 p-6 rounded-lg">
-            <h2 class="text-red-800 font-semibold">Error</h2>
-            <p class="text-red-600">${errorResponse.body.message}</p>
-          </div>
-        `;
+        const errorContent = renderErrorMessage(errorResponse.body.message);
         return new Response(errorContent, {
           headers: { 'Content-Type': 'text/html' },
           status: errorResponse.status
