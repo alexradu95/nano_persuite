@@ -1,4 +1,4 @@
-import { Input, InputProps } from '../atoms/Input';
+import { Input, type InputProps } from '../atoms/Input';
 
 export interface FormFieldProps extends InputProps {
   error?: string;

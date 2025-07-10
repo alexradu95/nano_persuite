@@ -31,7 +31,7 @@ export const MonthlyCalendar = ({
       const totalHours = entriesForDay.reduce((sum, entry) => sum + entry.hoursWorked, 0);
       const totalAmount = entriesForDay.reduce((sum, entry) => sum + entry.totalAmount, 0);
       
-      html += `
+      html += /*html*/ `
         <div class="neo-calendar-day ${hasEntries ? 'neo-success' : 'bg-white'} h-24 p-2 cursor-pointer" 
              onclick="openIncomeEntryModal('${dateString}')">
           <div class="font-black text-black text-lg mb-1">${day}</div>

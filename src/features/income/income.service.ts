@@ -1,18 +1,18 @@
 import { DatabaseError } from "../../shared/errors/handlers";
 import { createId } from "../../shared/utils/id";
-import { Result } from "../../shared/types/result";
+import type { Result } from "../../shared/types/result";
 import {
-  Contract,
-  CreateContractRequest,
-  CreateIncomeEntryRequest,
-  IncomeEntry,
-  MonthlyIncomeSummary,
+  type Contract,
+  type CreateContractRequest,
+  type CreateIncomeEntryRequest,
+  type IncomeEntry,
+  type MonthlyIncomeSummary,
   ContractSchema,
   CreateContractRequestSchema,
   CreateIncomeEntryRequestSchema,
   IncomeEntrySchema,
 } from "../../schemas/income";
-import { IncomeRepository } from "./income.repository";
+import type { IncomeRepository } from "./income.repository";
 
 export class IncomeService {
   constructor(private repository: IncomeRepository) {}
