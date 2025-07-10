@@ -14,8 +14,29 @@ async function handleHTMLRoutes(pathname: string, req: Request): Promise<Respons
   const userId = "user-1"; // Mock user - in production, get from auth
   
   try {    
-    if (pathname === '/app/income' || pathname === '/app') {
-      return await incomeHandlers.getIncomePage(req, userId);
+    // Redirect root and old income path to monthly view
+    if (pathname === '/app' || pathname === '/app/income') {
+      return Response.redirect('/app/income/monthly', 302);
+    }
+    
+    // Monthly Income Entries (Calendar view)
+    if (pathname === '/app/income/monthly') {
+      return await incomeHandlers.getMonthlyPage(req, userId);
+    }
+    
+    // Dashboard
+    if (pathname === '/app/income/dashboard') {
+      return await incomeHandlers.getDashboardPage(req, userId);
+    }
+    
+    // Contracts Configurator
+    if (pathname === '/app/income/contracts') {
+      return await incomeHandlers.getContractsPage(req, userId);
+    }
+    
+    // Taxes Configurator
+    if (pathname === '/app/income/taxes') {
+      return await incomeHandlers.getTaxesPage(req, userId);
     }
     
     return new Response('Not Found', { status: 404 });
@@ -101,12 +122,12 @@ const server = Bun.serve({
   async fetch(req) {
     const url = new URL(req.url);
     
-    // Redirect root to income page
+    // Redirect root to monthly income page
     if (url.pathname === '/') {
-      return Response.redirect('/app/income', 302);
+      return Response.redirect('/app/income/monthly', 302);
     }
     
-    // HTML routes (for HTMX)
+    // HTML routes (for HTML)
     if (url.pathname.startsWith('/app/')) {
       return handleHTMLRoutes(url.pathname, req);
     }

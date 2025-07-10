@@ -2,7 +2,14 @@ import { createIncomeService } from "./income.factory";
 import { CreateContractRequestSchema, CreateIncomeEntryRequestSchema } from "../../schemas/income";
 import { validateRequestBody } from "../../shared/validation/middleware";
 import { handleError } from "../../shared/errors/handlers";
-import { renderIncomeCalendar, renderContractsList, renderIncomeOverview } from "./income.templates";
+import { 
+  renderMonthlyIncomePage, 
+  renderContractsPage, 
+  renderDashboardPage, 
+  renderTaxesPage,
+  renderContractsList, 
+  renderIncomeEntryForm 
+} from "./income.templates";
 import { layout } from "../../shared/templates/layout";
 import { renderErrorMessage } from "../../shared/templates/error";
 
@@ -26,8 +33,8 @@ export class IncomeHandlers {
     return { format };
   }
 
-  async getIncomePage(req: Request, userId: string): Promise<Response> {
-    const context = this.getRequestContext(req);
+  // Monthly Income Entries Page (Calendar view)
+  async getMonthlyPage(req: Request, userId: string): Promise<Response> {
     const url = new URL(req.url);
     const year = parseInt(url.searchParams.get('year') || new Date().getFullYear().toString());
     const month = parseInt(url.searchParams.get('month') || (new Date().getMonth() + 1).toString());
@@ -41,20 +48,76 @@ export class IncomeHandlers {
       const error = contractsResult.success ? incomeResult.error : contractsResult.error;
       const errorResponse = handleError(error);
       const errorContent = renderErrorMessage(errorResponse.body.message);
-      return new Response(layout('Income Tracking - Error', errorContent), {
+      return new Response(layout('Monthly Income Entries - Error', errorContent, 'income-monthly'), {
         headers: { 'Content-Type': 'text/html' },
         status: errorResponse.status
       });
     }
 
-    const content = renderIncomeCalendar(
+    const content = renderMonthlyIncomePage(
       contractsResult.data,
       incomeResult.data,
       year,
       month
     );
 
-    return new Response(layout('Income Tracking', content), {
+    return new Response(layout('Monthly Income Entries', content, 'income-monthly'), {
+      headers: { 'Content-Type': 'text/html' }
+    });
+  }
+
+  // Dashboard Page
+  async getDashboardPage(req: Request, userId: string): Promise<Response> {
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth() + 1;
+    
+    const [contractsResult, incomeResult] = await Promise.all([
+      this.service.getContracts(userId),
+      this.service.getMonthlyIncome(userId, currentYear, currentMonth)
+    ]);
+    
+    if (!contractsResult.success || !incomeResult.success) {
+      const error = contractsResult.success ? incomeResult.error : contractsResult.error;
+      const errorResponse = handleError(error);
+      const errorContent = renderErrorMessage(errorResponse.body.message);
+      return new Response(layout('Dashboard - Error', errorContent, 'income-dashboard'), {
+        headers: { 'Content-Type': 'text/html' },
+        status: errorResponse.status
+      });
+    }
+
+    const content = renderDashboardPage(incomeResult.data, contractsResult.data);
+
+    return new Response(layout('Dashboard', content, 'income-dashboard'), {
+      headers: { 'Content-Type': 'text/html' }
+    });
+  }
+
+  // Contracts Configurator Page
+  async getContractsPage(req: Request, userId: string): Promise<Response> {
+    const contractsResult = await this.service.getContracts(userId);
+    
+    if (!contractsResult.success) {
+      const errorResponse = handleError(contractsResult.error);
+      const errorContent = renderErrorMessage(errorResponse.body.message);
+      return new Response(layout('Contracts Configurator - Error', errorContent, 'income-contracts'), {
+        headers: { 'Content-Type': 'text/html' },
+        status: errorResponse.status
+      });
+    }
+
+    const content = renderContractsPage(contractsResult.data);
+
+    return new Response(layout('Contracts Configurator', content, 'income-contracts'), {
+      headers: { 'Content-Type': 'text/html' }
+    });
+  }
+
+  // Taxes Configurator Page
+  async getTaxesPage(req: Request, userId: string): Promise<Response> {
+    const content = renderTaxesPage();
+
+    return new Response(layout('Taxes Configurator', content, 'income-taxes'), {
       headers: { 'Content-Type': 'text/html' }
     });
   }
@@ -132,8 +195,8 @@ export class IncomeHandlers {
       if (context.format === 'json') {
         return Response.json(result.data, { status: 201 });
       } else {
-        // Redirect to income page after successful contract creation
-        return Response.redirect('/app/income', 302);
+        // Redirect to contracts page after successful contract creation
+        return Response.redirect('/app/income/contracts', 302);
       }
     } catch (error) {
       const errorResponse = handleError(error as Error);
@@ -192,8 +255,8 @@ export class IncomeHandlers {
       if (context.format === 'json') {
         return Response.json(result.data, { status: 201 });
       } else {
-        // Redirect to income page after successful entry creation
-        return Response.redirect('/app/income', 302);
+        // Redirect to monthly income page after successful entry creation
+        return Response.redirect('/app/income/monthly', 302);
       }
     } catch (error) {
       const errorResponse = handleError(error as Error);
@@ -233,7 +296,20 @@ export class IncomeHandlers {
     if (context.format === 'json') {
       return Response.json(result.data);
     } else {
-      const content = renderIncomeOverview(result.data);
+      const content = `<div class="neo-container bg-white p-6">
+        <h3 class="neo-title text-xl text-black mb-4">📊 MONTHLY INCOME</h3>
+        <div class="space-y-3">
+          <div class="neo-container neo-gray-light p-3">
+            <span class="font-black text-black uppercase">Total Hours: ${result.data.totalHours}</span>
+          </div>
+          <div class="neo-container neo-gray-medium p-3">
+            <span class="font-black text-black uppercase">Total Amount: €${result.data.totalAmount.toFixed(2)}</span>
+          </div>
+          <div class="neo-container neo-gray-dark text-white p-3">
+            <span class="font-black uppercase">Entries: ${result.data.entries.length}</span>
+          </div>
+        </div>
+      </div>`;
       return new Response(content, {
         headers: { 'Content-Type': 'text/html' }
       });
@@ -287,8 +363,8 @@ export class IncomeHandlers {
     if (context.format === 'json') {
       return Response.json(result.data, { status: 201 });
     } else {
-      // Redirect to income page after successful quick entry
-      return Response.redirect('/app/income', 302);
+      // Redirect to monthly income page after successful quick entry
+      return Response.redirect('/app/income/monthly', 302);
     }
   }
 
@@ -312,8 +388,8 @@ export class IncomeHandlers {
     if (context.format === 'json') {
       return Response.json({ success: true });
     } else {
-      // Redirect to income page after successful deletion
-      return Response.redirect('/app/income', 302);
+      // Redirect to monthly income page after successful deletion
+      return Response.redirect('/app/income/monthly', 302);
     }
   }
 
@@ -337,8 +413,8 @@ export class IncomeHandlers {
     if (context.format === 'json') {
       return Response.json({ success: true });
     } else {
-      // Redirect to income page after setting default contract
-      return Response.redirect('/app/income', 302);
+      // Redirect to contracts page after setting default contract
+      return Response.redirect('/app/income/contracts', 302);
     }
   }
 }
