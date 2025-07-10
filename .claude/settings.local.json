@@ -18,7 +18,8 @@
       "Bash(ss:*)",
       "Bash(npx jest:*)",
       "Bash(pkill:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(npm start)"
     ],
     "deny": []
   }

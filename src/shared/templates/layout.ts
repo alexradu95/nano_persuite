@@ -7,6 +7,7 @@ export const layout = (content: string, title: string = "Income Tracker", active
   <title>${title} - Income Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <meta name="view-transition" content="same-origin">
   
   <style>
     /* Neo-Brutalist Design System - Serious Palette */
@@ -82,7 +83,7 @@ export const layout = (content: string, title: string = "Income Tracker", active
       font-weight: 900;
       text-transform: uppercase;
       letter-spacing: 1px;
-      text-shadow: 2px 2px 0px var(--neo-black);
+      text-shadow: 1px 1px 0px var(--neo-black);
     }
     
     .neo-gradient-bg {
@@ -163,6 +164,75 @@ export const layout = (content: string, title: string = "Income Tracker", active
       background-color: var(--neo-gray-medium);
       font-weight: 800;
     }
+    
+    /* View Transition API Styles */
+    @view-transition {
+      navigation: auto;
+    }
+    
+    /* Fallback for browsers without view transition support */
+    @media (prefers-reduced-motion: reduce) {
+      ::view-transition-group(*),
+      ::view-transition-old(*),
+      ::view-transition-new(*) {
+        animation-duration: 0.01ms !important;
+        animation-delay: 0s !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+    
+    /* Transition names for key elements */
+    main {
+      view-transition-name: main-content;
+    }
+    
+    aside {
+      view-transition-name: sidebar-content;
+    }
+    
+    /* Custom transition animations - elegant fade only */
+    ::view-transition-old(main-content) {
+      animation: fade-out 0.15s ease-out;
+    }
+    
+    ::view-transition-new(main-content) {
+      animation: fade-in 0.2s ease-out;
+    }
+    
+    ::view-transition-old(sidebar-content) {
+      animation: fade-out 0.1s ease-out;
+    }
+    
+    ::view-transition-new(sidebar-content) {
+      animation: fade-in 0.15s ease-out;
+    }
+    
+    /* Root transition for overall page change */
+    ::view-transition-old(root) {
+      animation: fade-out 0.12s ease-out;
+    }
+    
+    ::view-transition-new(root) {
+      animation: fade-in 0.18s ease-out;
+    }
+    
+    @keyframes fade-out {
+      from {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+      }
+    }
+    
+    @keyframes fade-in {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
   </style>
 </head>
 <body class="bg-white min-h-screen neo-gradient-bg">
@@ -224,6 +294,117 @@ export const layout = (content: string, title: string = "Income Tracker", active
       </div>
     </main>
   </div>
+
+  <script>
+    // Enhanced navigation with View Transition API for MPAs
+    function initViewTransitions() {
+      // Check if View Transition API is supported
+      if (!document.startViewTransition) {
+        console.log('View Transition API not supported, falling back to normal navigation');
+        return;
+      }
+      
+      console.log('View Transition API supported - initializing...');
+      
+      // Intercept navigation links
+      document.addEventListener('click', function(e) {
+        const link = e.target.closest('a');
+        if (!link) return;
+        
+        // Only intercept internal app links
+        if (!link.href.includes('/app/')) return;
+        
+        // Skip if it's a different origin
+        if (link.origin !== window.location.origin) return;
+        
+        // Skip if it's the same page
+        if (link.href === window.location.href) return;
+        
+        // Skip if it has target="_blank" or similar
+        if (link.target && link.target !== '_self') return;
+        
+        // Skip if it's a modifier key click
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        
+        e.preventDefault();
+        
+        console.log('Starting view transition to:', link.href);
+        
+        // Start view transition with proper MPA navigation
+        document.startViewTransition(async () => {
+          try {
+            // Fetch the new page
+            const response = await fetch(link.href);
+            if (!response.ok) {
+              throw new Error(\`HTTP error! status: \${response.status}\`);
+            }
+            
+            const html = await response.text();
+            
+            // Parse the new HTML
+            const parser = new DOMParser();
+            const newDoc = parser.parseFromString(html, 'text/html');
+            
+            // Update the document title
+            document.title = newDoc.title;
+            
+            // Update the main content area
+            const currentMain = document.querySelector('main');
+            const newMain = newDoc.querySelector('main');
+            if (currentMain && newMain) {
+              currentMain.innerHTML = newMain.innerHTML;
+            }
+            
+            // Update the sidebar active state
+            const currentSidebar = document.querySelector('aside');
+            const newSidebar = newDoc.querySelector('aside');
+            if (currentSidebar && newSidebar) {
+              currentSidebar.innerHTML = newSidebar.innerHTML;
+            }
+            
+            // Update the URL
+            window.history.pushState({}, '', link.href);
+            
+            // Re-initialize any JavaScript that might be needed
+            initPageScripts();
+            
+            console.log('View transition completed successfully');
+          } catch (error) {
+            console.error('View transition failed:', error);
+            // Fallback to normal navigation
+            window.location.href = link.href;
+          }
+        });
+      });
+    }
+    
+    // Initialize page-specific scripts
+    function initPageScripts() {
+      // Re-run any inline scripts that might be in the new content
+      const scripts = document.querySelectorAll('main script, aside script');
+      scripts.forEach(script => {
+        if (script.innerHTML) {
+          try {
+            eval(script.innerHTML);
+          } catch (e) {
+            console.warn('Failed to execute inline script:', e);
+          }
+        }
+      });
+    }
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initViewTransitions);
+    } else {
+      initViewTransitions();
+    }
+    
+    // Add progressive enhancement for browsers that support it
+    if (document.startViewTransition) {
+      document.documentElement.classList.add('view-transitions-supported');
+    }
+  </script>
 
 </body>
 </html>`;
