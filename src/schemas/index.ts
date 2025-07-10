@@ -3,3 +3,4 @@ export * from "./user";
 export * from "./transaction";
 export * from "./task";
 export * from "./dashboard";
+export * from "./income";

@@ -17,30 +17,37 @@ export const runMigrations = (): void => {
       )
     `);
 
-    // Create transactions table
+    // Create contracts table
     db.exec(`
-      CREATE TABLE IF NOT EXISTS transactions (
+      CREATE TABLE IF NOT EXISTS contracts (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
-        amount REAL NOT NULL,
-        category TEXT NOT NULL,
+        title TEXT NOT NULL,
+        hourly_rate REAL NOT NULL,
         description TEXT,
-        date TEXT NOT NULL,
+        is_active BOOLEAN DEFAULT TRUE,
+        is_default BOOLEAN DEFAULT FALSE,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id)
       )
     `);
 
-    // Create tasks table
+    // Create income_entries table
     db.exec(`
-      CREATE TABLE IF NOT EXISTS tasks (
+      CREATE TABLE IF NOT EXISTS income_entries (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
-        title TEXT NOT NULL,
-        completed BOOLEAN DEFAULT FALSE,
-        due_date TEXT,
+        contract_id TEXT NOT NULL,
+        date TEXT NOT NULL,
+        hours_worked REAL NOT NULL,
+        total_amount REAL NOT NULL,
+        description TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id)
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (contract_id) REFERENCES contracts(id),
+        UNIQUE(user_id, contract_id, date)
       )
     `);
 

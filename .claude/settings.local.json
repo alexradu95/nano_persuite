@@ -15,7 +15,10 @@
       "Bash(timeout:*)",
       "Bash(bun test:*)",
       "Bash(bun run:*)",
-      "Bash(ss:*)"
+      "Bash(ss:*)",
+      "Bash(npx jest:*)",
+      "Bash(pkill:*)",
+      "Bash(npm run:*)"
     ],
     "deny": []
   }
