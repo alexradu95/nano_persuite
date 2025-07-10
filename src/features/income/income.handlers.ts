@@ -2,14 +2,11 @@ import { createIncomeService } from "./income.factory";
 import { CreateContractRequestSchema, CreateIncomeEntryRequestSchema } from "../../schemas/income";
 import { validateRequestBody } from "../../shared/validation/middleware";
 import { handleError } from "../../shared/errors/handlers";
-import { 
-  renderMonthlyIncomePage, 
-  renderContractsPage, 
-  renderDashboardPage, 
-  renderTaxesPage,
-  renderContractsList, 
-  renderIncomeEntryForm 
-} from "./income.templates";
+import { MonthlyIncomePage } from './components/MonthlyIncomePage';
+import { DashboardPage } from './components/DashboardPage';
+import { ContractsPage } from './components/ContractsPage';
+import { TaxesPage } from './components/TaxesPage';
+import { ContractsList } from './components/ContractsList';
 import { layout } from "../../shared/templates/layout";
 import { renderErrorMessage } from "../../shared/templates/error";
 
@@ -54,12 +51,12 @@ export class IncomeHandlers {
       });
     }
 
-    const content = renderMonthlyIncomePage(
-      contractsResult.data,
-      incomeResult.data,
+    const content = MonthlyIncomePage({
+      contracts: contractsResult.data,
+      monthlyIncome: incomeResult.data,
       year,
       month
-    );
+    });
 
     return new Response(layout(content, 'Monthly Income Entries', 'income-monthly'), {
       headers: { 'Content-Type': 'text/html' }
@@ -86,7 +83,7 @@ export class IncomeHandlers {
       });
     }
 
-    const content = renderDashboardPage(incomeResult.data, contractsResult.data);
+    const content = DashboardPage({ monthlyIncome: incomeResult.data, contracts: contractsResult.data });
 
     return new Response(layout(content, 'Dashboard', 'income-dashboard'), {
       headers: { 'Content-Type': 'text/html' }
@@ -106,7 +103,7 @@ export class IncomeHandlers {
       });
     }
 
-    const content = renderContractsPage(contractsResult.data);
+    const content = ContractsPage({ contracts: contractsResult.data });
 
     return new Response(layout(content, 'Contracts Configurator', 'income-contracts'), {
       headers: { 'Content-Type': 'text/html' }
@@ -115,7 +112,7 @@ export class IncomeHandlers {
 
   // Taxes Configurator Page
   async getTaxesPage(req: Request, userId: string): Promise<Response> {
-    const content = renderTaxesPage();
+    const content = TaxesPage();
 
     return new Response(layout(content, 'Taxes Configurator', 'income-taxes'), {
       headers: { 'Content-Type': 'text/html' }
@@ -142,7 +139,7 @@ export class IncomeHandlers {
     if (context.format === 'json') {
       return Response.json(result.data);
     } else {
-      const content = renderContractsList(result.data);
+      const content = ContractsPage({ contracts: result.data });
       return new Response(content, {
         headers: { 'Content-Type': 'text/html' }
       });
