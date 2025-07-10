@@ -22,14 +22,11 @@ export const renderMonthlyIncomePage = (
   
   return `
     <div class="income-tracker space-y-8">
-      <div class="neo-card bg-white p-6">
-        <div class="flex justify-between items-center mb-6">
-          <h1 class="neo-title text-2xl text-black" style="view-transition-name: income-header">📊 INCOME TRACKING</h1>
-          <div class="flex items-center space-x-4">
-            <a href="/app/income/monthly?year=${prevYear}&month=${prevMonth}" class="neo-btn neo-gray-medium px-4 py-2 text-black font-black">← PREV</a>
-            <h2 class="neo-title text-xl text-white bg-black px-4 py-2">${monthNames[month - 1]} ${year}</h2>
-            <a href="/app/income/monthly?year=${nextYear}&month=${nextMonth}" class="neo-btn neo-gray-medium px-4 py-2 text-black font-black">NEXT →</a>
-          </div>
+      <div class="flex justify-between items-center mb-6">
+        <div class="flex items-center space-x-4">
+          <a href="/app/income/monthly?year=${prevYear}&month=${prevMonth}" class="neo-btn neo-gray-medium px-4 py-2 text-black font-black">← PREV</a>
+          <h2 class="neo-title text-xl text-white bg-black px-4 py-2">${monthNames[month - 1]} ${year}</h2>
+          <a href="/app/income/monthly?year=${nextYear}&month=${nextMonth}" class="neo-btn neo-gray-medium px-4 py-2 text-black font-black">NEXT →</a>
         </div>
       </div>
       
@@ -284,8 +281,7 @@ export const renderIncomeEntryForm = (contracts: Contract[]): string => {
 export const renderContractsPage = (contracts: Contract[]): string => {
   return `
     <div class="space-y-6">
-      <div class="flex justify-between items-center">
-        <h2 class="neo-title text-2xl text-black" style="view-transition-name: contracts-header">📋 CONTRACTS MANAGEMENT</h2>
+      <div class="flex justify-end items-center mb-6">
         <button onclick="showContractForm()" class="neo-btn neo-gray-dark text-white px-6 py-3 font-black">+ ADD CONTRACT</button>
       </div>
       
@@ -322,7 +318,6 @@ export const renderDashboardPage = (monthlyIncome: MonthlyIncomeSummary, contrac
   
   return `
     <div class="space-y-6">
-      <h2 class="neo-title text-2xl text-black" style="view-transition-name: dashboard-header">📈 INCOME DASHBOARD</h2>
       
       <!-- Current Month Overview -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -388,7 +383,6 @@ export const renderDashboardPage = (monthlyIncome: MonthlyIncomeSummary, contrac
 export const renderTaxesPage = (): string => {
   return `
     <div class="space-y-6">
-      <h2 class="neo-title text-2xl text-black" style="view-transition-name: taxes-header">🧾 TAXES CONFIGURATOR</h2>
       
       <div class="neo-card neo-warning p-6">
         <div class="flex items-center space-x-3">

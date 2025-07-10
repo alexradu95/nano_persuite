@@ -1,3 +1,22 @@
+const renderIncomeTabNavigation = (activePage: string): string => {
+  const tabs = [
+    { id: 'income-monthly', label: '📅 Monthly', href: '/app/income/monthly' },
+    { id: 'income-dashboard', label: '📈 Dashboard', href: '/app/income/dashboard' },
+    { id: 'income-contracts', label: '📋 Contracts', href: '/app/income/contracts' },
+    { id: 'income-taxes', label: '🧾 Taxes', href: '/app/income/taxes' }
+  ];
+
+  return `
+    <div class="income-tabs">
+      ${tabs.map(tab => `
+        <a href="${tab.href}" class="income-tab px-6 py-3 text-sm font-black uppercase bg-white ${activePage === tab.id ? 'active' : ''}">
+          ${tab.label}
+        </a>
+      `).join('')}
+    </div>
+  `;
+};
+
 export const layout = (content: string, title: string = "Income Tracker", activePage: string = ""): string => {
   return /*html*/`<!DOCTYPE html>
 <html lang="en">
@@ -40,7 +59,6 @@ export const layout = (content: string, title: string = "Income Tracker", active
     
     .neo-container:hover {
       box-shadow: var(--neo-shadow-hover);
-      transform: translate(-2px, -2px);
     }
     
     .neo-btn {
@@ -54,7 +72,6 @@ export const layout = (content: string, title: string = "Income Tracker", active
     
     .neo-btn:hover {
       box-shadow: 5px 5px 0px var(--neo-black);
-      transform: translate(-2px, -2px);
     }
     
     .neo-btn:active {
@@ -108,7 +125,6 @@ export const layout = (content: string, title: string = "Income Tracker", active
     
     .neo-calendar-day:hover {
       box-shadow: 3px 3px 0px var(--neo-black);
-      transform: translate(-1px, -1px);
     }
     
     .neo-modal {
@@ -139,7 +155,6 @@ export const layout = (content: string, title: string = "Income Tracker", active
     }
     
     .sidebar-nav-item:hover {
-      transform: translate(-2px, -2px);
       box-shadow: 4px 4px 0px var(--neo-black);
     }
     
@@ -233,6 +248,47 @@ export const layout = (content: string, title: string = "Income Tracker", active
         opacity: 1;
       }
     }
+    
+    /* Horizontal tabs styling */
+    .income-tabs {
+      border-bottom: 4px solid var(--neo-black);
+      display: flex;
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 100;
+      flex-shrink: 0;
+    }
+    
+    .income-tab {
+      border: 3px solid var(--neo-black);
+      border-bottom: none;
+      box-shadow: 2px 0px 0px var(--neo-black);
+      transition: all 0.1s ease;
+      margin-right: -3px;
+    }
+    
+    .income-tab:hover {
+      background-color: var(--neo-gray-light);
+    }
+    
+    .income-tab.active {
+      background-color: var(--neo-gray-medium);
+      font-weight: 900;
+      border-bottom: 4px solid var(--neo-gray-medium);
+      margin-bottom: -4px;
+      z-index: 10;
+      position: relative;
+    }
+    
+    .income-tab:first-child {
+      border-top-left-radius: 0;
+    }
+    
+    .income-tab:last-child {
+      border-top-right-radius: 0;
+      margin-right: 0;
+    }
   </style>
 </head>
 <body class="bg-white min-h-screen neo-gradient-bg">
@@ -259,38 +315,25 @@ export const layout = (content: string, title: string = "Income Tracker", active
             <div class="sidebar-nav-item neo-container bg-white p-3 mb-2 ${activePage.startsWith('income') ? 'active' : ''}">
               <span class="font-black text-sm uppercase tracking-wide">📊 Income Tracker</span>
             </div>
-            
-            <!-- Income Tracker Submenu -->
-            <div class="ml-4 space-y-1">
-              <a href="/app/income/monthly" class="sidebar-tab block p-2 text-sm font-bold uppercase ${activePage === 'income-monthly' ? 'active' : ''}">
-                📅 Monthly Income Entries
-              </a>
-              <a href="/app/income/dashboard" class="sidebar-tab block p-2 text-sm font-bold uppercase ${activePage === 'income-dashboard' ? 'active' : ''}">
-                📈 Dashboard
-              </a>
-              <a href="/app/income/contracts" class="sidebar-tab block p-2 text-sm font-bold uppercase ${activePage === 'income-contracts' ? 'active' : ''}">
-                📋 Contracts Configurator
-              </a>
-              <a href="/app/income/taxes" class="sidebar-tab block p-2 text-sm font-bold uppercase ${activePage === 'income-taxes' ? 'active' : ''}">
-                🧾 Taxes Configurator
-              </a>
-            </div>
           </div>
         </nav>
       </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 p-4 pl-0 overflow-auto">
-      <div class="mb-6">
+    <main class="flex-1 p-4 pl-0 flex flex-col h-screen">
+      <div class="mb-6 flex-shrink-0">
         <div class="neo-card bg-white p-6">
           <h1 class="neo-title text-3xl text-black mb-2">${title}</h1>
           <div class="neo-stripes h-2 w-full"></div>
         </div>
       </div>
       
-      <div class="neo-card bg-white p-6">
-        ${content}
+      <div class="neo-card bg-white flex flex-col flex-1 min-h-0">
+        ${activePage.startsWith('income') ? renderIncomeTabNavigation(activePage) : ''}
+        <div class="p-6 flex-1 overflow-auto">
+          ${content}
+        </div>
       </div>
     </main>
   </div>

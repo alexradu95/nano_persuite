@@ -48,7 +48,7 @@ export class IncomeHandlers {
       const error = contractsResult.success ? incomeResult.error : contractsResult.error;
       const errorResponse = handleError(error);
       const errorContent = renderErrorMessage(errorResponse.body.message);
-      return new Response(layout('Monthly Income Entries - Error', errorContent, 'income-monthly'), {
+      return new Response(layout(errorContent, 'Monthly Income Entries - Error', 'income-monthly'), {
         headers: { 'Content-Type': 'text/html' },
         status: errorResponse.status
       });
@@ -61,7 +61,7 @@ export class IncomeHandlers {
       month
     );
 
-    return new Response(layout('Monthly Income Entries', content, 'income-monthly'), {
+    return new Response(layout(content, 'Monthly Income Entries', 'income-monthly'), {
       headers: { 'Content-Type': 'text/html' }
     });
   }
@@ -80,7 +80,7 @@ export class IncomeHandlers {
       const error = contractsResult.success ? incomeResult.error : contractsResult.error;
       const errorResponse = handleError(error);
       const errorContent = renderErrorMessage(errorResponse.body.message);
-      return new Response(layout('Dashboard - Error', errorContent, 'income-dashboard'), {
+      return new Response(layout(errorContent, 'Dashboard - Error', 'income-dashboard'), {
         headers: { 'Content-Type': 'text/html' },
         status: errorResponse.status
       });
@@ -88,7 +88,7 @@ export class IncomeHandlers {
 
     const content = renderDashboardPage(incomeResult.data, contractsResult.data);
 
-    return new Response(layout('Dashboard', content, 'income-dashboard'), {
+    return new Response(layout(content, 'Dashboard', 'income-dashboard'), {
       headers: { 'Content-Type': 'text/html' }
     });
   }
@@ -100,7 +100,7 @@ export class IncomeHandlers {
     if (!contractsResult.success) {
       const errorResponse = handleError(contractsResult.error);
       const errorContent = renderErrorMessage(errorResponse.body.message);
-      return new Response(layout('Contracts Configurator - Error', errorContent, 'income-contracts'), {
+      return new Response(layout(errorContent, 'Contracts Configurator - Error', 'income-contracts'), {
         headers: { 'Content-Type': 'text/html' },
         status: errorResponse.status
       });
@@ -108,7 +108,7 @@ export class IncomeHandlers {
 
     const content = renderContractsPage(contractsResult.data);
 
-    return new Response(layout('Contracts Configurator', content, 'income-contracts'), {
+    return new Response(layout(content, 'Contracts Configurator', 'income-contracts'), {
       headers: { 'Content-Type': 'text/html' }
     });
   }
@@ -117,7 +117,7 @@ export class IncomeHandlers {
   async getTaxesPage(req: Request, userId: string): Promise<Response> {
     const content = renderTaxesPage();
 
-    return new Response(layout('Taxes Configurator', content, 'income-taxes'), {
+    return new Response(layout(content, 'Taxes Configurator', 'income-taxes'), {
       headers: { 'Content-Type': 'text/html' }
     });
   }
